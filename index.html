@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aplikasi Kuis React dengan Filter Level</title>
+
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    
+    <!-- Babel untuk JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <!-- Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --primary: #0984e3;
+            --primary-dark: #076ebc;
+            --success: #00b894;
+            --success-bg: #e6fffa;
+            --error: #d63031;
+            --error-bg: #ffeaea;
+            --text-dark: #2d3436;
+            --text-light: #636e72;
+            --bg-color: #eef2f6;
+            --border: #dfe6e9;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--bg-color);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: var(--text-dark);
+        }
+
+        .container {
+            background: white;
+            width: 100%;
+            max-width: 650px;
+            padding: 2rem;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.08);
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            margin: 20px;
+        }
+
+        h1 { color: var(--text-dark); margin-bottom: 0.5rem; font-size: 1.6rem; }
+        h2 { margin: 0; font-size: 1.1rem; }
+        p { color: var(--text-light); line-height: 1.6; margin-bottom: 1.5rem; }
+
+        /* Form Elements */
+        .setup-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .input-group { margin-bottom: 5px; text-align: left; }
+        .input-group label { display: block; margin-bottom: 8px; font-weight: 500; font-size: 0.9rem; color: var(--text-dark); }
+        
+        .form-select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            font-size: 0.95rem;
+            outline: none;
+            box-sizing: border-box;
+            transition: 0.3s;
+            background-color: white;
+            font-family: inherit;
+            cursor: pointer;
+            appearance: none; /* Hilangkan default arrow browser */
+            background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23636e72%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
+            background-repeat: no-repeat;
+            background-position: right 15px top 50%;
+            background-size: 10px auto;
+        }
+
+        .form-select:focus { border-color: var(--primary); }
+
+        input[type="number"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            font-size: 1rem;
+            outline: none;
+            box-sizing: border-box;
+            transition: 0.3s;
+            font-family: inherit;
+        }
+        input[type="number"]:focus { border-color: var(--primary); }
+
+        /* Buttons */
+        .btn {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            font-size: 1rem;
+            border-radius: 12px;
+            cursor: pointer;
+            width: 100%;
+            font-weight: 600;
+            transition: 0.2s;
+            box-shadow: 0 4px 6px rgba(9, 132, 227, 0.2);
+        }
+        .btn:hover { background-color: var(--primary-dark); transform: translateY(-2px); }
+        .btn:active { transform: translateY(0); }
+
+        /* Quiz Header & Tags */
+        .header-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .tag {
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .tag-category { background-color: #e3f2fd; color: #0984e3; }
+        .tag-level { background-color: #dfe6e9; color: #636e72; }
+        
+        /* Level Colors */
+        .level-Easy { background-color: #e6fffa; color: #00b894; }
+        .level-Medium { background-color: #fff3cd; color: #856404; }
+        .level-Hard { background-color: #ffeaea; color: #d63031; }
+
+        /* Question Box */
+        .question-box {
+            text-align: left;
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 16px;
+            margin-bottom: 25px;
+            border-left: 6px solid var(--primary);
+        }
+        .question-text { font-size: 1.15rem; line-height: 1.6; font-weight: 500; margin: 0; }
+
+        /* Options Grid */
+        .options-grid { display: grid; gap: 12px; }
+
+        .option-card {
+            background: white;
+            border: 2px solid var(--border);
+            padding: 16px 20px;
+            border-radius: 12px;
+            text-align: left;
+            cursor: pointer;
+            transition: 0.2s;
+            display: flex;
+            align-items: flex-start;
+        }
+
+        .option-card:hover:not(.disabled) { 
+            background-color: #f1f2f6; 
+            border-color: #b2bec3; 
+        }
+        
+        .option-card.correct { border-color: var(--success); background-color: var(--success-bg); color: #00604d; font-weight: 500; }
+        .option-card.wrong { border-color: var(--error); background-color: var(--error-bg); color: #880e10; opacity: 0.8; }
+        .option-card.disabled { pointer-events: none; }
+
+        .option-label {
+            font-weight: 700;
+            margin-right: 15px;
+            min-width: 30px;
+            color: var(--text-light);
+        }
+        
+        .option-card.correct .option-label { color: #00604d; }
+        .option-card.wrong .option-label { color: #880e10; }
+
+        /* Correction Box */
+        .correction-box {
+            margin-top: 25px;
+            background-color: #fff9e6;
+            border: 1px solid #ffeeba;
+            color: #856404;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: left;
+            animation: slideDown 0.3s ease-out;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.03);
+        }
+        
+        .correction-title { 
+            font-weight: 700; 
+            margin-bottom: 8px; 
+            display: flex; 
+            align-items: center; 
+            gap: 8px;
+            font-size: 1rem;
+        }
+        
+        .correct-answer-highlight {
+            background: rgba(0,0,0,0.05);
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            display: block;
+            border-left: 3px solid var(--success);
+        }
+
+        .explanation-text { font-size: 0.95rem; margin: 0; color: #555; }
+        .explanation-label { font-weight: 600; color: #444; margin-right: 5px; }
+
+        /* Result Screen */
+        .result-summary {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            flex: 1;
+            background: white;
+            padding: 15px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+        .stat-value { font-size: 1.5rem; font-weight: 700; display: block; }
+        .stat-label { font-size: 0.8rem; color: var(--text-light); text-transform: uppercase; }
+
+        .score-circle {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            background: conic-gradient(var(--primary) 0%, #dfe6e9 0%);
+            margin: 0 auto 25px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            box-shadow: 0 10px 20px rgba(9, 132, 227, 0.15);
+        }
+        .score-inner {
+            width: 130px;
+            height: 130px;
+            background: white;
+            border-radius: 50%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Responsive */
+        @media (max-width: 480px) {
+            .setup-grid { grid-template-columns: 1fr; }
+            .container { padding: 1.5rem; margin: 0; border-radius: 0; min-height: 100vh; display: flex; flex-direction: column; justify-content: center; }
+            .header-info { flex-direction: column; align-items: flex-start; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="root"></div>
+
+    <script type="text/babel" data-type="module">
+        // IMPORT DATA DARI FILE TERPISAH
+        import { QUESTION_BANK } from './questions2.js';
+
+        const { useState, useMemo, useEffect } = React;
+
+        // --- SETUP SCREEN (HOME) ---
+        const SetupScreen = ({ onStart }) => {
+            // Filter States
+            const [selectedLevel, setSelectedLevel] = useState('All');
+            const [selectedCategory, setSelectedCategory] = useState('All');
+            const [count, setCount] = useState(5);
+
+            // Extract unique levels and categories dynamically
+            const availableLevels = ['All', ...new Set(QUESTION_BANK.map(q => q.level))];
+            const availableCategories = ['All', ...new Set(QUESTION_BANK.map(q => q.category))];
+
+            // Calculate max available questions based on current filters
+            const filteredQuestions = QUESTION_BANK.filter(q => {
+                const levelMatch = selectedLevel === 'All' || q.level === selectedLevel;
+                const categoryMatch = selectedCategory === 'All' || q.category === selectedCategory;
+                return levelMatch && categoryMatch;
+            });
+
+            const maxQuestions = filteredQuestions.length;
+            
+            // Reset count if it exceeds available questions
+            useEffect(() => {
+                if (count > maxQuestions && maxQuestions > 0) {
+                    setCount(maxQuestions);
+                } else if (maxQuestions === 0) {
+                    setCount(0);
+                }
+            }, [selectedLevel, selectedCategory, maxQuestions]);
+
+            const handleStart = () => {
+                if (maxQuestions === 0) {
+                    alert("Tidak ada soal yang cocok dengan filter ini.");
+                    return;
+                }
+                if(count <= 0) {
+                    alert("Jumlah soal minimal 1.");
+                    return;
+                }
+                
+                // Pass filter info to parent
+                onStart({
+                    count: count,
+                    filters: { level: selectedLevel, category: selectedCategory }
+                });
+            };
+
+            return (
+                <div className="container">
+                    <h1>Quiz Setup</h1>
+                    <p>Sesuaikan kuis sesuai kebutuhan belajar Anda.</p>
+                    
+                    <div className="setup-grid">
+                        <div className="input-group">
+                            <label>Tingkat Kesulitan</label>
+                            <select 
+                                className="form-select" 
+                                value={selectedLevel} 
+                                onChange={(e) => setSelectedLevel(e.target.value)}
+                            >
+                                {availableLevels.map(level => (
+                                    <option key={level} value={level}>{level}</option>
+                                ))}
+                            </select>
+                        </div>
+
+                        <div className="input-group">
+                            <label>Kategori</label>
+                            <select 
+                                className="form-select" 
+                                value={selectedCategory} 
+                                onChange={(e) => setSelectedCategory(e.target.value)}
+                            >
+                                {availableCategories.map(cat => (
+                                    <option key={cat} value={cat}>{cat}</option>
+                                ))}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div className="input-group">
+                        <label>Jumlah Soal (Tersedia: {maxQuestions})</label>
+                        <input
+                            type="number"
+                            value={count}
+                            onChange={(e) => setCount(Number(e.target.value))}
+                            min="1"
+                            max={maxQuestions}
+                            disabled={maxQuestions === 0}
+                        />
+                    </div>
+
+                    <button className="btn" onClick={handleStart} disabled={maxQuestions === 0}>
+                        Mulai Kuis
+                    </button>
+                </div>
+            );
+        };
+
+        // --- QUIZ SCREEN ---
+        const QuizScreen = ({ questions, onFinish }) => {
+            const [currentIdx, setCurrentIdx] = useState(0);
+            const [score, setScore] = useState(0);
+            const [userAnswer, setUserAnswer] = useState(null);
+            const [showCorrection, setShowCorrection] = useState(false);
+            const [answerFirstQuestion, setAnswerFirstQuestion] = useState(false);
+
+            const question = questions[currentIdx];
+            const isLastQuestion = currentIdx === questions.length - 1;
+
+            const handleOptionClick = (optionKey) => {
+                if (userAnswer !== null) return;
+
+                setUserAnswer(optionKey);
+
+                if (optionKey === question.correct) {
+                    countScore(optionKey);
+                } else {
+                    setShowCorrection(true);
+                }
+            };
+
+            const countScore = (key) => {
+                setScore(prev => prev + 1);
+                if (currentIdx === 0) {
+                    setAnswerFirstQuestion(true);
+                }
+                setTimeout(() => handleNextKey(key), 1200);
+            };
+
+            const handleNextKey = (key) => {
+                console.log("handleNextKey called with key: ", key);
+                if (isLastQuestion) {
+                    let valScore = score + (key === question.correct ? 1 : 0);
+                    // if (answerFirstQuestion == true) {
+                    //     valScore = valScore + 1;
+                    // }
+                    onFinish({
+                        score: valScore,
+                        total: questions.length
+                    });
+                } else {
+                    setCurrentIdx(prev => prev + 1);
+                    setUserAnswer(null);
+                    setShowCorrection(false);
+                }
+            };
+
+
+            const handleNext = () => {
+                if (isLastQuestion) {
+                    let valScore = score + (userAnswer === question.correct ? 1 : 0);
+
+                    onFinish({
+                        score: valScore,
+                        total: questions.length
+                    });
+                } else {
+                    setCurrentIdx(prev => prev + 1);
+                    setUserAnswer(null);
+                    setShowCorrection(false);
+                }
+            };
+
+            const getLevelClass = (level) => {
+                switch(level) {
+                    case 'Easy': return 'level-Easy';
+                    case 'Medium': return 'level-Medium';
+                    case 'Hard': return 'level-Hard';
+                    default: return '';
+                }
+            };
+
+            return (
+                <div className="container">
+                    <div className="header-info">
+                        <span style={{fontWeight: 600, color: '#b2bec3'}}>
+                            Soal {currentIdx + 1} / {questions.length}
+                        </span>
+                        <div style={{display: 'flex', gap: '8px'}}>
+                            <span className={`tag tag-category`}>{question.category}</span>
+                            <span className={`tag ${getLevelClass(question.level)}`}>{question.level}</span>
+                        </div>
+                    </div>
+
+                    <div className="question-box">
+                        <h3 className="question-text">{question.question}</h3>
+                    </div>
+
+                    <div className="options-grid">
+                        {['a', 'b', 'c', 'd'].map((key) => (
+                            <div
+                                key={key}
+                                className={`option-card 
+                                    ${userAnswer === key ? (key === question.correct ? 'correct' : 'wrong') : ''}
+                                    ${userAnswer && question.correct === key ? 'correct' : ''}
+                                    ${userAnswer ? 'disabled' : ''}
+                                `}
+                                onClick={() => handleOptionClick(key)}
+                            >
+                                <span className="option-label">{key.toUpperCase()}.</span>
+                                <span>{question[key]}</span>
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* KOREKSI */}
+                    {showCorrection && (
+                        <div className="correction-box">
+                            <span className="correction-title">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                                Penjelasan & Koreksi
+                            </span>
+                            
+                            <div className="correct-answer-highlight">
+                                <strong>Jawaban Benar: {question.correct.toUpperCase()}</strong> - {question[question.correct]}
+                            </div>
+
+                            <div className="explanation-text">
+                                {question.explanations[userAnswer] ? (
+                                    <div>
+                                        <span className="explanation-label">Analisis Jawaban Anda:</span>
+                                        {question.explanations[userAnswer]}
+                                        <br /><br />
+                                        <span className="explanation-label">Info Tambahan:</span>
+                                        {question.explanations[question.correct]}
+                                    </div>
+                                ) : (
+                                    <span>{question.explanations[question.correct]}</span>
+                                )}
+                            </div>
+                            
+                            <button className="btn" style={{marginTop: '20px'}} onClick={handleNext}>
+                                {isLastQuestion ? "Lihat Hasil" : "Soal Berikutnya"}
+                            </button>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        // --- RESULT SCREEN ---
+        const ResultScreen = ({ result, onRestart }) => {
+            const percentage = Math.round((result.score / result.total) * 100);
+            console.log("result: ", result);
+
+            return (
+                <div className="container">
+                    <h1>Kuis Selesai!</h1>
+                    <p>Berikut adalah hasil performa Anda.</p>
+                    
+                    <div className="score-circle" style={{ background: `conic-gradient(#0984e3 ${percentage}%, #dfe6e9 ${percentage}%)` }}>
+                        <div className="score-inner">
+                            <div style={{fontSize: '2.2rem', fontWeight: 'bold', color: '#0984e3'}}>{percentage}%</div>
+                        </div>
+                    </div>
+
+                    <div className="result-summary">
+                        <div className="stat-card" style={{color: '#00b894'}}>
+                            <span className="stat-value">{result.score}</span>
+                            <span className="stat-label">Benar</span>
+                        </div>
+                        <div className="stat-card" style={{color: '#d63031'}}>
+                            <span className="stat-value">{result.total - result.score}</span>
+                            <span className="stat-label">Salah</span>
+                        </div>
+                    </div>
+
+                    <button className="btn" onClick={onRestart}>Main Lagi</button>
+                </div>
+            );
+        };
+
+        // --- MAIN APP ---
+        const App = () => {
+            const [screen, setScreen] = useState('setup');
+            const [activeQuestions, setActiveQuestions] = useState([]);
+            const [finalResult, setFinalResult] = useState(null);
+
+            const startQuiz = ({ count, filters }) => {
+                // 1. Filter Question Bank
+                let filtered = QUESTION_BANK.filter(q => {
+                    const levelMatch = filters.level === 'All' || q.level === filters.level;
+                    const categoryMatch = filters.category === 'All' || q.category === filters.category;
+                    return levelMatch && categoryMatch;
+                });
+
+                // 2. Shuffle
+                const shuffled = filtered.sort(() => 0.5 - Math.random());
+
+                // 3. Slice
+                setActiveQuestions(shuffled.slice(0, count));
+                setScreen('quiz');
+            };
+
+            const finishQuiz = (result) => {
+                setFinalResult(result);
+                setScreen('result');
+            };
+
+            return (
+                <div>
+                    {screen === 'setup' && <SetupScreen onStart={startQuiz} />}
+                    {screen === 'quiz' && <QuizScreen questions={activeQuestions} onFinish={finishQuiz} />}
+                    {screen === 'result' && <ResultScreen result={finalResult} onRestart={() => setScreen('setup')} />}
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
