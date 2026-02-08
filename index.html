@@ -296,16 +296,19 @@
             const [selectedLevel, setSelectedLevel] = useState('All');
             const [selectedCategory, setSelectedCategory] = useState('All');
             const [count, setCount] = useState(5);
+            const [selectedType, setSelectedType] = useState('All');
 
             // Extract unique levels and categories dynamically
             const availableLevels = ['All', ...new Set(QUESTION_BANK.map(q => q.level))];
             const availableCategories = ['All', ...new Set(QUESTION_BANK.map(q => q.category))];
+            const availableTypes = ['All', ...new Set(QUESTION_BANK.map(q => q.type))];
 
             // Calculate max available questions based on current filters
             const filteredQuestions = QUESTION_BANK.filter(q => {
                 const levelMatch = selectedLevel === 'All' || q.level === selectedLevel;
                 const categoryMatch = selectedCategory === 'All' || q.category === selectedCategory;
-                return levelMatch && categoryMatch;
+                const typeMatch = selectedType === 'All' || q.type === selectedType;
+                return levelMatch && categoryMatch && typeMatch;
             });
 
             const maxQuestions = filteredQuestions.length;
@@ -317,7 +320,7 @@
                 } else if (maxQuestions === 0) {
                     setCount(0);
                 }
-            }, [selectedLevel, selectedCategory, maxQuestions]);
+            }, [selectedLevel, selectedCategory, selectedType, maxQuestions]);
 
             const handleStart = () => {
                 if (maxQuestions === 0) {
@@ -332,7 +335,7 @@
                 // Pass filter info to parent
                 onStart({
                     count: count,
-                    filters: { level: selectedLevel, category: selectedCategory }
+                    filters: { level: selectedLevel, category: selectedCategory, type: selectedType}
                 });
             };
 
@@ -359,11 +362,24 @@
                             <label>Kategori</label>
                             <select 
                                 className="form-select" 
-                                value={selectedCategory} 
+                                value={selectedCategory}
                                 onChange={(e) => setSelectedCategory(e.target.value)}
                             >
                                 {availableCategories.map(cat => (
                                     <option key={cat} value={cat}>{cat}</option>
+                                ))}
+                            </select>
+                        </div>
+
+                        <div className="input-group">
+                            <label>Tipe Soal</label>
+                            <select 
+                                className="form-select" 
+                                value={selectedType}
+                                onChange={(e) => setSelectedType(e.target.value)}
+                            >
+                                {availableTypes.map(type => (
+                                    <option key={type} value={type}>{type}</option>
                                 ))}
                             </select>
                         </div>
@@ -482,7 +498,7 @@
                         {['a', 'b', 'c', 'd'].map((key) => (
                             <div
                                 key={key}
-                                className={`option-card 
+                                className={`option-card
                                     ${userAnswer === key ? (key === question.correct ? 'correct' : 'wrong') : ''}
                                     ${userAnswer && question.correct === key ? 'correct' : ''}
                                     ${userAnswer ? 'disabled' : ''}
@@ -490,7 +506,7 @@
                                 onClick={() => handleOptionClick(key)}
                             >
                                 <span className="option-label">{key.toUpperCase()}.</span>
-                                <span>{question[key]}</span>
+                                <span>{question.options[key]}</span>
                             </div>
                         ))}
                     </div>
@@ -573,7 +589,8 @@
                 let filtered = QUESTION_BANK.filter(q => {
                     const levelMatch = filters.level === 'All' || q.level === filters.level;
                     const categoryMatch = filters.category === 'All' || q.category === filters.category;
-                    return levelMatch && categoryMatch;
+                    const typeMatch = filters.type === 'All' || q.type === filters.type;
+                    return levelMatch && categoryMatch && typeMatch;
                 });
 
                 // 2. Shuffle
